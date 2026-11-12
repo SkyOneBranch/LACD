@@ -10,12 +10,26 @@ module loads even while they are being implemented in parallel.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 MANAGED_BEGIN = (
     '<!-- LACD:MANAGED:BEGIN section="lacd-agent-protocol" version="1.0.0" -->'
 )
 MANAGED_END = "<!-- LACD:MANAGED:END -->"
+
+_MANAGED_BEGIN_RE = re.compile(
+    r'<!--\s*LACD:MANAGED:BEGIN\s+section="lacd-agent-protocol"\s+version="\d+\.\d+\.\d+"\s*-->'
+)
+_MANAGED_END_RE = re.compile(r"<!--\s*LACD:MANAGED:END\s*-->")
+
+
+def _has_managed_section(text: str) -> bool:
+    for m in _MANAGED_BEGIN_RE.finditer(text):
+        if _MANAGED_END_RE.search(text, m.end()) is not None:
+            return True
+    return False
+
 
 READY_STATES = ("VALIDATED", "ENFORCED")
 
@@ -38,7 +52,7 @@ def read_project_instructions(project_dir: str | Path) -> dict:
     return {
         "found": True,
         "path": str(candidate.resolve()),
-        "managed_section_present": MANAGED_BEGIN in text,
+        "managed_section_present": _has_managed_section(text),
         "chars": len(text),
     }
 

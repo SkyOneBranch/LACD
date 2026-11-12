@@ -140,3 +140,62 @@ def test_checklist_t0_paths(tmp_path, monkeypatch):
     result = agent_checklist(tmp_path, intended_paths=["docs/guide.md"])
     assert result["risk_tier"] == "T0"
     assert result["ready"] is True
+
+
+# ---------- regression & security negative tests (B-01) ----------
+
+import pytest
+
+
+@pytest.mark.parametrize("version", ["1.0.0", "1.0.3", "1.0.4", "2.1.0"])
+def test_read_instructions_valid_semver_versions(tmp_path, version):
+    agents = (
+        f"# Project instructions\n\n"
+        f'<!-- LACD:MANAGED:BEGIN section="lacd-agent-protocol" version="{version}" -->\n'
+        f"- run lacd status\n"
+        f"<!-- LACD:MANAGED:END -->\n"
+    )
+    (tmp_path / "AGENTS.md").write_text(agents, encoding="utf-8")
+    info = read_project_instructions(tmp_path)
+    assert info["found"] is True
+    assert info["managed_section_present"] is True
+
+
+def test_read_instructions_real_lacd_init_output(tmp_path):
+    from lacd.cli.main import main
+    rc = main(["init", "--path", str(tmp_path)])
+    assert rc == 0
+    info = read_project_instructions(tmp_path)
+    assert info["found"] is True
+    assert info["managed_section_present"] is True
+
+
+def test_read_instructions_rejects_wrong_section_name(tmp_path):
+    agents = (
+        "# Project instructions\n\n"
+        '<!-- LACD:MANAGED:BEGIN section="other-section" version="1.0.3" -->\n'
+        "- run lacd status\n"
+        "<!-- LACD:MANAGED:END -->\n"
+    )
+    (tmp_path / "AGENTS.md").write_text(agents, encoding="utf-8")
+    info = read_project_instructions(tmp_path)
+    assert info["found"] is True
+    assert info["managed_section_present"] is False
+
+
+@pytest.mark.parametrize("content", [
+    # missing END marker
+    '<!-- LACD:MANAGED:BEGIN section="lacd-agent-protocol" version="1.0.0" -->\n- run lacd status\n',
+    # END marker appearing only before BEGIN marker
+    '<!-- LACD:MANAGED:END -->\n<!-- LACD:MANAGED:BEGIN section="lacd-agent-protocol" version="1.0.0" -->\n',
+    # malformed non-SemVer version=""
+    '<!-- LACD:MANAGED:BEGIN section="lacd-agent-protocol" version="" -->\n<!-- LACD:MANAGED:END -->\n',
+    # malformed non-SemVer version="bad"
+    '<!-- LACD:MANAGED:BEGIN section="lacd-agent-protocol" version="bad" -->\n<!-- LACD:MANAGED:END -->\n',
+])
+def test_read_instructions_rejects_invalid_managed_sections(tmp_path, content):
+    (tmp_path / "AGENTS.md").write_text(content, encoding="utf-8")
+    info = read_project_instructions(tmp_path)
+    assert info["found"] is True
+    assert info["managed_section_present"] is False
+

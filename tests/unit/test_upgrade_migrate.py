@@ -674,3 +674,58 @@ def test_update_lock_json_writes_lacd_cli_version(tmp_path):
     assert lock["lacd_cli_version"] == lacd.__version__
     assert lock["template_version"] == "1.1.0"
     assert lock["generated_by"] == f"lacd {lacd.__version__}"
+
+
+# ---------------------------------------------------------------------------
+# Risk classification parity (B-02) & characterization tests
+# ---------------------------------------------------------------------------
+
+PARITY_MATRIX = [
+    (".github/workflows/lacd-verify.yml", "T2"),
+    (".GITHUB/foo.yml", "T2"),
+    (".LACD/lock.json", "T2"),
+    ("sub/WORKFLOWS/build.yml", "T2"),
+    ("private_dir/readme.md", "T0"),
+    ("secret_dir/notes.py", "T1"),
+    ("docs/private_notes.md", "T2"),
+    ("llms.txt", "T1"),
+    ("CHANGELOG.md", "T0"),
+    ("AGENTS.md", "T1"),
+    ("SECURITY.md", "T2"),
+    ("../escape.txt", "T2"),
+    ("/etc/passwd", "T2"),
+    ("", "T2"),
+    ("docs\\guide.md", "T0"),
+]
+
+
+@pytest.mark.parametrize("path,expected_tier", PARITY_MATRIX)
+def test_risk_classification_parity_with_governance(path, expected_tier):
+    from lacd.governance.risk import classify_path
+    from lacd.upgrade.migrate import _risk_of
+
+    assert _risk_of(path) == expected_tier
+    assert classify_path(path) == _risk_of(path)
+
+
+def test_apply_migration_cross_version_pure_noop_writes_nothing(tmp_path):
+    """Frozen MODULE_CONTRACT §3 idempotency behavior on cross-version pure noop:
+    when all managed & shared files on disk already match target bundle bytes,
+    apply_migration returns lock_updated=False and writes nothing.
+    """
+    # Project locked at 1.0.0, but on-disk files already match 1.1.0 bundle bytes
+    _project(tmp_path, workflow=NEW_WORKFLOW, agents=_agents_with_section(NEW_SECTION))
+    lock_before = (tmp_path / ".lacd" / "lock.json").read_text(encoding="utf-8")
+    lock = LockFile.load(tmp_path)
+    bundle = _bundle("1.1.0")
+    plan = plan_migration(tmp_path, lock, bundle)
+    assert plan.conflicts == []
+    assert all(c.action == "noop" for c in plan.changes)
+
+    result = apply_migration(tmp_path, plan, bundle)
+    assert result.lock_updated is False
+    assert result.applied == []
+    assert result.backup_dir == ""
+    assert not (tmp_path / ".lacd" / "backup").exists()
+    assert (tmp_path / ".lacd" / "lock.json").read_text(encoding="utf-8") == lock_before
+
