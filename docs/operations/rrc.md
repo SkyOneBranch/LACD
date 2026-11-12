@@ -88,88 +88,40 @@ gh api /repos/SkyOneBranch/LACD/branches/main/protection/required_status_checks
 | FAIL | Q2 FAIL → 停止；或绑定验证明确失败 |
 | HOLD | Q2 HOLD、记录缺失、或 squash/rebase 无法证明等价性 |
 
-### RRC-5. 制品摘要核验（wheel / zip / manifest）
+### RRC-5. 制品摘要核验（wheel / zip / manifest，AC-B2 标准化构建）
 
 ```bash
-# 4. 从 MERGE_SHA 构建 wheel，断言模板/版本一致
-rm -rf rrc-build /tmp/rrc-wheel && mkdir -p /tmp/rrc-wheel
-git clone https://github.com/SkyOneBranch/LACD.git rrc-build
-cd rrc-build
-git checkout <MERGE_SHA_FULL>
-pip wheel --no-deps . -w /tmp/rrc-wheel
-python3 - <<'EOF'
-import zipfile, glob, json, hashlib
-whls = glob.glob("/tmp/rrc-wheel/*.whl")
-assert len(whls) == 1, f"expected 1 wheel, got {len(whls)}"
-whl = whls[0]
-z = zipfile.ZipFile(whl)
-names = z.namelist()
-assert any("templates/workflows" in n for n in names), "wheel 缺 templates"
-assert any("manifest.json" in n for n in names), "wheel 缺 manifest"
-# 验证内容与源码一致
-manifest = json.loads(z.read([n for n in names if n.endswith("templates/manifest.json")][0]))
-src_manifest = json.load(open("src/lacd/templates/manifest.json"))
-assert manifest["template_version"] == src_manifest["template_version"]
-for f in manifest["files"]:
-    wp = [n for n in names if n.endswith(f["path"])][0]
-    assert hashlib.sha256(z.read(wp)).hexdigest() == f["sha256"], f["path"]
-print("wheel OK:", whl, "| 内容与源码一致")
-EOF
-
-# 5. 构建模板包，计算 sha256（此值将用于 Release notes）
-# 已在 rrc-build 目录，无需重复 cd
-python3 - <<'EOF'
-import zipfile, os, hashlib, json
-tpl = "src/lacd/templates"
-man = json.load(open(f"{tpl}/manifest.json"))
-for e in man["files"]:
-    h = hashlib.sha256(open(os.path.join(tpl, e["path"]), "rb").read()).hexdigest()
-    assert h == e["sha256"].lower(), f"manifest 假哈希: {e['path']}"
-out = "/tmp/rrc-bundle.zip"
-with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
-    for root, _, fns in os.walk(tpl):
-        for fn in sorted(fns):
-            full = os.path.join(root, fn)
-            z.write(full, os.path.relpath(full, tpl))
-print("bundle sha256:", hashlib.sha256(open(out, "rb").read()).hexdigest())
-print("bundle size:", os.path.getsize(out))
-EOF
+# 4. 从当前已合并的 MERGE_SHA 运行标准化制品构建、核验与独立 venv 冒烟测试
+rm -rf /tmp/rrc-assets && mkdir -p /tmp/rrc-assets
+python scripts/release_assets.py --out-dir /tmp/rrc-assets --build --verify --smoke-venv
+# 断言：命令返回 0，输出 "Asset verification passed" 与 "Smoke venv tests passed successfully"
+# 自动生成：
+# - /tmp/rrc-assets/lacd-<VERSION>-py3-none-any.whl
+# - /tmp/rrc-assets/lacd-templates-<VERSION>.zip
+# - /tmp/rrc-assets/release-manifest-<VERSION>.json
+# - /tmp/rrc-assets/release-notes-snippet-<VERSION>.md
 ```
 
 | 结果 | 条件 |
 |---|---|
-| PASS | wheel 含 templates+manifest；manifest 哈希逐文件为真；bundle sha256 已记录 |
+| PASS | wheel 含 templates+manifest+schemas 且无 pyc；bundle sha256 吻合；smoke-venv 全绿 |
 | FAIL | 任一断言失败 → 停止，修代码重新走 PR（不得手工改制品） |
 | HOLD | 构建环境不可用 → 换环境重跑 |
 
 ### RRC-6. Release notes 可解析性（预检）
 
-在 Human 写 Release notes **前**，用本次模板预检：
+在 Human 发布 GitHub Release **前**，核验 `/tmp/rrc-assets/release-notes-snippet-<VERSION>.md`：
 
 ```bash
-# 6. 模板必须同时含：闭合 ```json 块 + Template-Bundle-SHA256: 行
-# 用 parse_template_bundle 对模板做解析测试（见 docs/operations/release.md）
-# 注意：使用当前 checkout 的绝对 src 路径（非 rrc-build/src，避免嵌套）
-RRC_SRC="$(pwd)/src"
-python3 - <<EOF
-import sys; sys.path.insert(0, "$RRC_SRC")
-# 断言模块来源正确（非已安装版本）
-import lacd; assert lacd.__file__.startswith("$RRC_SRC"), lacd.__file__
-from lacd.upgrade.source import parse_template_bundle
-notes = open("release-notes-draft.md").read()  # Human 按模板起草的正文
-parsed = parse_template_bundle({"body": notes, "assets": [
-    {"name": "lacd-templates-<VERSION>.zip",
-     "browser_download_url": "https://github.com/SkyOneBranch/LACD/releases/download/v<VERSION>/lacd-templates-<VERSION>.zip"}]})
-assert parsed is not None, "Release notes 无法解析出 bundle（参考 v1.0.0 未闭合围栏事故）"
-assert len(parsed["sha256"]) == 64
-print("notes parseable:", parsed["url"])
-EOF
+# 6. 核验自动生成的 release-notes-snippet 包含闭合 JSON 块与 Template-Bundle-SHA256 行
+cat /tmp/rrc-assets/release-notes-snippet-<VERSION>.md
+# 并确认 scripts/release_assets.py --verify 已内置通过 parse_template_bundle 核验
 ```
 
 | 结果 | 条件 |
 |---|---|
-| PASS | 模板解析成功，URL 与 sha256 格式正确 |
-| FAIL | 解析为 None → 修正 notes 模板，重新预检 |
+| PASS | 模板解析成功，URL 与 sha256 格式正确且与 /tmp/rrc-assets/ 制品哈希严格一致 |
+| FAIL | 解析为 None 或哈希不匹配 → 修正后重新预检 |
 | HOLD | —（本检查无外部依赖，不应 HOLD） |
 
 ## 结果汇总与放行规则
@@ -190,8 +142,12 @@ EOF
 
 ```
 PR 最终 HEAD → Q2 独立审查 (PASS) → Human Merge → RRC (本手册) →
-Human Release Authorization → Tag + Release → PRV（发布后验证）→ 生产采用
+Human Release Authorization → Tag + Release → PRV（发布后验证，AC-B3）→ 生产采用
 ```
 
 - Q2 过期（HEAD 变化）→ 重审 Q2，RRC 不得放行。
+- PRV 验证命令（AC-B3）：
+  ```bash
+  python scripts/release_assets.py --verify-public-release --tag v<VERSION>
+  ```
 - PRV 失败 → 禁止生产采用（见采用手册）。

@@ -25,3 +25,8 @@ jobs:
           test -z "$(git ls-files | grep -E '^(build/|\.coverage$)')" || (echo "tracked build artifacts found" && exit 1)
       - name: Run tests with coverage gate
         run: pytest --cov=lacd --cov-fail-under=80 -q
+      - name: Build, verify, and smoke-test release assets (packaging gate)
+        run: |
+          python scripts/release_assets.py --out-dir /tmp/lacd-ci-assets --build --verify --smoke-venv
+          git status --porcelain
+          test -z "$(git status --porcelain)" || (echo "worktree is dirty after packaging gate" && exit 1)
