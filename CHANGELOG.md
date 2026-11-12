@@ -4,7 +4,7 @@ All notable changes to LACD are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
-## [1.0.3] — (unreleased)
+## [1.0.3] — 2026-10-16
 
 Patch (SemVer Patch, backward compatible). Repository migration compatibility,
 upgrade reliability, and README product experience:
@@ -156,3 +156,4 @@ First public version. Implements the complete v1.0 contract:
 [1.0.0]: https://github.com/SkyOneBranch/LACD/releases/tag/v1.0.0
 [1.0.1]: https://github.com/SkyOneBranch/LACD/releases/tag/v1.0.1
 [1.0.2]: https://github.com/SkyOneBranch/LACD/releases/tag/v1.0.2
+[1.0.3]: https://github.com/SkyOneBranch/LACD/releases/tag/v1.0.3
