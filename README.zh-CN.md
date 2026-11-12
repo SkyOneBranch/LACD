@@ -45,10 +45,10 @@ AI 可以很快生成代码，却仍可能误解需求、漏掉测试，或影�
 
 **准备：** Python 3.11+、Git、一个现有的 Git 项目；若使用完整 GitHub PR 流程，还需要 GitHub 仓库及相应权限。建议在独立的 Python 虚拟环境中安装。
 
-下面安装**当前正式发布的 v1.0.3**（[查看 Releases](https://github.com/SkyOneBranch/LACD/releases)）。请在项目目录运行：
+待 **v1.0.4** 在 [GitHub Releases](https://github.com/SkyOneBranch/LACD/releases) 正式发布后，可在项目目录安装对应版本：
 
 ```bash
-python -m pip install "git+https://github.com/SkyOneBranch/LACD.git@v1.0.3"
+python -m pip install "git+https://github.com/SkyOneBranch/LACD.git@v1.0.4"
 lacd --version
 lacd init --dry-run
 lacd init
@@ -59,6 +59,8 @@ lacd verify --local --strict
 `init --dry-run` 先预览，`init` 再写入项目配置和受管模板。**先阅读预览，再确认是否适合你的仓库。**
 
 `verify --local --strict` 只验证本地条件，**不能证明 GitHub 分支保护已生效**。如需检查远端保护，请阅读[采用指南](docs/operations/adopt.md)与[治理协议](docs/specification/PROTOCOL.md)。
+
+**v1.0.4 更新：**改进跨版本项目指令受管标记的识别，统一升级路径风险分级，并在发布前校验 wheel 与模板 ZIP 制品。以上改进不改变“本地验证不等于远端规则已强制生效”的边界。
 
 如果你的项目使用过旧版 LACD，版本锁中可能仍保留原来的上游仓库名称。这是真实的历史来源信息，不应手工改写。需要升级时，请参考[升级指南](docs/operations/upgrade.md)。
 
