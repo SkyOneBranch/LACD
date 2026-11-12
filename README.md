@@ -45,10 +45,10 @@ Some providers may offer free usage tiers for low-cost experimentation. **Availa
 
 **Prerequisites:** Python 3.11+, Git, and an existing Git project. For the full GitHub PR workflow, you also need a GitHub repository and suitable permissions. An isolated Python virtual environment is recommended.
 
-Install the **current stable release, v1.0.3** ([see Releases](https://github.com/SkyOneBranch/LACD/releases)). Run these commands in your project directory:
+Once **v1.0.4** is published on [GitHub Releases](https://github.com/SkyOneBranch/LACD/releases), install that pinned version in your project directory:
 
 ```bash
-python -m pip install "git+https://github.com/SkyOneBranch/LACD.git@v1.0.3"
+python -m pip install "git+https://github.com/SkyOneBranch/LACD.git@v1.0.4"
 lacd --version
 lacd init --dry-run
 lacd init
@@ -59,6 +59,8 @@ lacd verify --local --strict
 `init --dry-run` previews the changes; `init` then writes configuration and managed templates. **Review the preview before applying it to your repository.**
 
 `verify --local --strict` checks local conditions only. **It does not prove that GitHub branch protection is enforced.** See the [adoption guide](docs/operations/adopt.md) and [governance protocol](docs/specification/PROTOCOL.md) for remote verification.
+
+**What's new in v1.0.4:** managed project-instruction markers work across versions, upgrade risk classification is consistent, and release wheel/template ZIP assets can be checked before publication. The distinction between local validation and remote enforcement still applies.
 
 If your project uses an older LACD version, its lock file may retain the original upstream repository name. This is historical source information, not something to rewrite manually. Follow the [upgrade guide](docs/operations/upgrade.md) when upgrading.
 
