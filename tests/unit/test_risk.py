@@ -114,3 +114,34 @@ def test_classify_change_empty_is_t2_fail_closed():
 def test_classify_change_stops_at_t2():
     # T2 anywhere in the list dominates, regardless of position.
     assert classify_change([".lacd/lock.json"]) == "T2"
+
+
+# ---------- Risk classification parity matrix (B-02) ----------
+
+PARITY_MATRIX = [
+    (".github/workflows/lacd-verify.yml", "T2"),
+    (".GITHUB/foo.yml", "T2"),
+    (".LACD/lock.json", "T2"),
+    ("sub/WORKFLOWS/build.yml", "T2"),
+    ("private_dir/readme.md", "T0"),
+    ("secret_dir/notes.py", "T1"),
+    ("docs/private_notes.md", "T2"),
+    ("llms.txt", "T1"),
+    ("CHANGELOG.md", "T0"),
+    ("AGENTS.md", "T1"),
+    ("SECURITY.md", "T2"),
+    ("../escape.txt", "T2"),
+    ("/etc/passwd", "T2"),
+    ("", "T2"),
+    ("docs\\guide.md", "T0"),
+]
+
+
+@pytest.mark.parametrize("path,expected_tier", PARITY_MATRIX)
+def test_risk_classification_parity_matrix(path, expected_tier):
+    from lacd.upgrade.migrate import _risk_of
+
+    assert classify_path(path) == expected_tier
+    assert _risk_of(path) == expected_tier
+    assert classify_path(path) == _risk_of(path)
+

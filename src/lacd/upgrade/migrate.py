@@ -39,6 +39,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from lacd.config.lockfile import LockFile
+from lacd.governance.risk import classify_path
 
 BACKUP_ROOT = ".lacd/backup"
 LOCK_REL = ".lacd/lock.json"
@@ -119,30 +120,8 @@ def _safe_join(project: Path, rel: str) -> Path:
 
 
 def _risk_of(path: str) -> str:
-    """Local risk tier per MODULE_CONTRACT §4 (T2 > T0 > T1 default)."""
-    p = path.replace("\\", "/")
-    low = p.lower()
-    base = low.rsplit("/", 1)[-1]
-    # T2 first
-    if (
-        p.startswith(".github/")
-        or p.startswith(".lacd/")
-        or "/workflows/" in p
-        or p.startswith("workflows/")
-        or any(k in low for k in ("secret", "credential", "token", "private"))
-        or low.endswith((".pem", ".key", ".p12", ".pfx"))
-        or base == "security.md"
-    ):
-        return "T2"
-    # T0
-    if (
-        p.startswith("docs/")
-        or p.startswith("examples/")
-        or base.startswith(("readme", "license", "notice", "changelog"))
-    ):
-        return "T0"
-    # T1 default (includes AGENTS.md shared files, src/**, tests/**, ...)
-    return "T1"
+    """Local risk tier per MODULE_CONTRACT §4 delegated to canonical classifier."""
+    return classify_path(path)
 
 
 def _extract_section(text: str, section: str) -> str | None:

@@ -4,6 +4,42 @@ All notable changes to LACD are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.4] — (unreleased)
+
+Patch (SemVer Patch, backward compatible). Compatibility bugfixes, repeatable
+release-asset verification, dual-repository adoption E2E, and bounded review
+governance documentation:
+
+### Fixed
+- **Managed section version detection (B-01)**: `read_project_instructions` in
+  `lacd.agents.protocol` now validates `lacd-agent-protocol` `BEGIN` + `END`
+  markers across SemVer versions (`1.0.0`, `1.0.3`, `1.0.4`, etc.) instead of
+  hardcoding `version="1.0.0"` without checking `MANAGED_END`.
+- **Upgrade risk classification alignment (B-02)**: `lacd.upgrade.migrate._risk_of`
+  now delegates directly to `lacd.governance.risk.classify_path`, eliminating
+  divergences on case-insensitive governance paths (`.GITHUB/`, `.LACD/`,
+  `WORKFLOWS/`), directory vs filename secret keywords, and fail-closed `T2`
+  handling of invalid/escaping paths per frozen `MODULE_CONTRACT.md` §4.
+
+### Changed
+- **Adopter template**: `lacd-verify.yml` installs
+  `git+https://github.com/SkyOneBranch/LACD.git@v1.0.4`; `manifest.json`
+  `template_version` = `1.0.4` with recomputed SHA-256.
+- **CI & release runbooks**: `.github/workflows/ci.yml` adds a wheel + template
+  bundle + smoke-venv packaging gate; `docs/operations/{install,release,rrc}.md`
+  incorporate pre-publish asset verification (`AC-B2`), GitHub Release wheel +
+  `pipx`/`uv` install paths, and public release PRV checks (`AC-B3`).
+
+### Added
+- `scripts/release_assets.py`: deterministic builder and verifier for wheel,
+  `lacd-templates-<version>.zip`, `release-manifest-<version>.json`, dual-format
+  release-notes snippet, clean smoke-venv check, and `--verify-public-release`.
+- `tests/e2e/test_v104_release_adoption_matrix.py`: Alpha/Beta dual-repository
+  adoption, `v1.0.3 -> 1.0.4` upgrade, DRIFT refusal, rollback, and real
+  `v1.0.3` release metadata/live verification suite.
+- `docs/operations/bounded-review.md` & `docs/v103-v104-evidence-index.md`:
+  bounded T0/T1/T2 Q1/Q2 review guide and raw governance/release evidence index.
+
 ## [1.0.3] — 2026-10-16
 
 Patch (SemVer Patch, backward compatible). Repository migration compatibility,
