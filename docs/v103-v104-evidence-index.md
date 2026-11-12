@@ -78,40 +78,41 @@
 
 ### 2.1 v1.0.4 PR 治理与审查记录表
 
-| 跟踪项 | 凭据字段 | PR-1（WP-T 契约同步） | PR-2（v1.0.4 特性实现主 PR） |
+- **冻结需求与跟踪单**：GitHub Issue [#10](https://github.com/SkyOneBranch/LACD/issues/10)（关联 Notion `412ad272535b815ea874d25edf460ed4` `2026-11-11 LATEST SCOPE`）
+
+| 跟踪项 | 凭据字段 | PR-1（WP-T 发布后文档同步） | PR-2（v1.0.4 特性实现主 PR） |
 |---|---|---|---|
-| **PR 基本信息** | PR 编号与链接 | 待创建（源分支 `docs/v1.0.4-wp-t-sync`） | 待创建（源分支 `feature/v1.0.4`） |
-| | 目标基线分支 | `main` | `main` |
-| | 风险分级（T0/T1/T2） | `T0` / `T1`（经 `classify_change` 计算） | `T1`（含代码、测试与元数据改动） |
-| **CI 验证** | GitHub Actions Run ID | `PENDING_PR_CREATION` | `PENDING_PR_CREATION` |
-| | 自动化测试结果 | 待记录（需 `pytest -q` 全绿） | 待记录（需 `pytest -q` 全绿，覆盖率达标） |
-| **Q1 规格审查** | 审查人 / 模型 | 待记录 | 待记录 |
-| | 时间戳（UTC） | 待记录 | 待记录 |
-| | 审查结论（PASS/HOLD） | 待记录 | 待记录 |
-| **Q2 独立审查（6要素）** | 1. `reviewer` | 待分配独立审查者 | 待分配独立审查者 |
-| | 2. `model` | 待记录模型名称与版本 | 待记录模型名称与版本 |
-| | 3. `time` | 待记录完成时间戳（ISO 8601） | 待记录完成时间戳（ISO 8601） |
-| | 4. `reviewed_head_sha` | 待填入经审阅的最终稳定 HEAD（40位） | 待填入经审阅的最终稳定 HEAD（40位） |
-| | 5. `verdict` | 严格限定为 `PASS` / `FAIL` / `HOLD` | 严格限定为 `PASS` / `FAIL` / `HOLD` |
-| | 6. `raw` | 完整原始评审文本或永久可信链接 | 完整原始评审文本或永久可信链接 |
+| **PR 基本信息** | PR 编号与链接 | [#11](https://github.com/SkyOneBranch/LACD/pull/11)（源分支 `docs/v1.0.4-wp-t-sync`） | `PENDING_PR_CREATION`（源分支 `feature/v1.0.4`，关联 Issue #10） |
+| | 目标基线分支 | `main` | `main`（基于 `docs/v1.0.4-wp-t-sync` 栈式对齐以消除 `CHANGELOG.md` 合并冲突；请先普通合并 PR #11 再普通合并本 PR） |
+| | 风险分级（T0/T1/T2） | `T1`（`llms.txt` → `T1`、`CHANGELOG.md` → `T0`，整体取最高 `T1`） | `T2`（含 `.github/workflows/ci.yml`、`workflows/lacd-verify.yml` 与风险分级修复，整体取最高 `T2`） |
+| **CI 验证** | GitHub Actions 状态 | Python 3.11 / 3.12 push & PR 四项检查全绿（PASS） | `PENDING_PR_CI`（最终凭据写入 PR 评论） |
+| | 本地自动化测试结果 | `398 passed, 1 skipped` | 独立 1.0.4 venv 全量 `pytest --cov=lacd --cov-fail-under=80` + `release_assets.py --build --verify --smoke-venv` + Live `v1.0.3` E2E 全绿 |
+| **Q1 规格审查** | 审查人 / 模型 | `lacd_independent_reviewer`（会话 `b72ddceb-fc8d-41a0-8f00-694a2329e7b9` / `gemini-2.5-flash`） | 同左（统一覆盖 WP-0 / WP-A / WP-B / WP-C / WP-T，`Q1-01 ~ Q1-10`） |
+| | 时间戳（UTC） | `2026-11-12T03:32:00Z` | `2026-11-12T03:32:00Z`（基线 `main` SHA `4610d73ea9c231c9fe78047b514f961a53cffce9`） |
+| | 审查结论（PASS/HOLD） | `PASS` | `PASS`（摘要已归档于 Issue [#10](https://github.com/SkyOneBranch/LACD/issues/10)） |
+| **Q2 独立审查（6要素）** | 1. `reviewer` | `lacd_independent_reviewer`（隔离会话 `748eaf5f-1174-4b6f-b699-85b3b1f592e2`） | `PENDING_PR_Q2`（避免分支内自指 SHA 循环，最终凭据发布于本 PR 评论） |
+| | 2. `model` | `gemini-2.5-flash` | `PENDING_PR_Q2` |
+| | 3. `time` | `2026-11-12T03:48:30Z` | `PENDING_PR_Q2` |
+| | 4. `reviewed_head_sha` | `08ed0ccc02e20d4671a2c6d8aad62bf65a979e36` | `PENDING_PR_Q2`（严格绑定本 PR 最终稳定 40 位 HEAD） |
+| | 5. `verdict` | `PASS` | `PENDING_PR_Q2`（仅限 `PASS` / `FAIL` / `HOLD`） |
+| | 6. `raw` | [PR #11 评论 #6813813970](https://github.com/SkyOneBranch/LACD/pull/11#issuecomment-6813813970) | `PENDING_PR_Q2`（持久化于本 PR 评论区） |
 | **Human 决策与合并** | 合并提交（Merge Commit SHA） | `PENDING_HUMAN_MERGE` | `PENDING_HUMAN_MERGE` |
 | | 合并时间戳（UTC） | `PENDING_HUMAN_MERGE` | `PENDING_HUMAN_MERGE` |
-| | 授权人 / 方式 | Human Approve + Merge on Web | Human Approve + Merge on Web |
+| | 授权人 / 方式 | Human Approve + Regular Merge (`Create a merge commit`) | Human Approve + Regular Merge (`Create a merge commit`) |
 
 ---
 
-### 2.2 v1.0.4 RRC 发布就绪核验记录（Post-Merge, Pre-Tag）
+### 2.2 v1.0.4 RRC 发布就绪核验记录（Post-Merge, Pre-Tag，对齐 `docs/operations/rrc.md`）
 
 | 核验项目 | 检查内容 | 预期结果与规范 | 执行状态 / 记录 |
 |---|---|---|---|
 | **RRC-1** | 合并 SHA 查验 | `gh api pulls/<N>` `merged=true` 且 `merge_commit_sha == main HEAD` | `PENDING_HUMAN_MERGE` |
-| **RRC-2** | 合并提交 CI 全绿 | `MERGE_SHA` 对应的 Actions run 状态全为 success | `PENDING_HUMAN_MERGE` |
-| **RRC-3** | 分支保护与 Required Checks | 分支保护规则生效，Required checks 覆盖合并提交 | 若无 Admin Token 则记录为 `UNVERIFIED`，由 Human 网页查验 |
-| **RRC-4** | Q2 凭据与 HEAD 绑定 | `reviewed_head_sha` 等于 PR 合并前最终 HEAD，Q2 为 `PASS` 未过期 | `PENDING_HUMAN_MERGE` |
-| **RRC-5** | 本地制品摘要与 Manifest 核验 | 从 `MERGE_SHA` 构建 Wheel 与 Bundle ZIP，哈希与 `manifest.json` 一致 | `PENDING_HUMAN_MERGE` |
-| **RRC-6** | Release Notes 格式解析 | 正文包含闭合 JSON 块与 `Template-Bundle-SHA256:` 明文行，解析无误 | `PENDING_HUMAN_MERGE` |
-| **RRC-7** | CHANGELOG 与版本一致性 | `__version__`、CHANGELOG 章节、Release 目标版本均为 `1.0.4` | `PENDING_HUMAN_MERGE` |
-| **RRC-8** | RRC 综合裁决 | 所有项全 PASS → 推荐打标发布；任一项缺陷 → HOLD | `PENDING_HUMAN_MERGE` |
+| **RRC-2** | 合并提交 CI 全绿 | `MERGE_SHA` 对应的 Actions run（含 `test (3.11)`、`test (3.12)` 及 Packaging Gate）全为 success | `PENDING_HUMAN_MERGE` |
+| **RRC-3** | 分支保护与 Required Checks | 分支保护规则生效，Required checks 覆盖合并提交 | 若无 Admin Token 返回 403 则如实记录 `HOLD` / `UNVERIFIED`，由 Human 网页查验 |
+| **RRC-4** | Q2 凭据与 HEAD 绑定 | 普通 merge 下 `MERGE_SHA` 第二父提交 == Q2 `reviewed_head_sha`，Q2 为 `PASS` 且未过期 | `PENDING_HUMAN_MERGE` |
+| **RRC-5** | 本地制品摘要与 Smoke Venv 核验 | 从 `MERGE_SHA` 执行 `python scripts/release_assets.py --out-dir /tmp/rrc-assets --build --verify --smoke-venv` 返回 0 | `PENDING_HUMAN_MERGE` |
+| **RRC-6** | Release Notes 双格式解析预检 | `release-notes-snippet-1.0.4.md` 含闭合 JSON 块与 `Template-Bundle-SHA256:` 明文行，经 `parse_template_bundle` 校验一致 | `PENDING_HUMAN_MERGE` |
+| **RRC 总结果** | RRC 综合裁决 | `RRC-1..RRC-6` 全部 PASS → 提交 Human Release Authorization；任一 FAIL/HOLD → 停止或等待解除 | `PENDING_HUMAN_MERGE` |
 
 ---
 
