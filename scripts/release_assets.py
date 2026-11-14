@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
 import os
 import re
@@ -399,16 +400,14 @@ def verify_public_release(tag: str, repo: str = DEFAULT_UPSTREAM_REPO) -> None:
             req_w = urllib.request.Request(w_url, headers={"User-Agent": "lacd-release-verifier"})
             with urllib.request.urlopen(req_w, timeout=60) as resp:
                 w_bytes = resp.read()
-            with zipfile.ZipFile(tempfile.SpooledTemporaryFile()) as wz:
-                pass  # or write to temp and inspect
-            # Just verify wheel is valid zip and has no pyc
-            with tempfile.NamedTemporaryFile(suffix=".whl") as tf:
-                tf.write(w_bytes)
-                tf.flush()
-                with zipfile.ZipFile(tf.name, "r") as wz:
-                    for n in wz.namelist():
-                        if "__pycache__" in n or n.endswith(".pyc"):
-                            raise ValueError(f"Public wheel contains bytecode cache: {n}")
+            # Verify the downloaded wheel is a valid ZIP and has no bytecode
+            # cache. Read it from the downloaded bytes via BytesIO: opening
+            # an empty temp file as a ZIP always raised BadZipFile, and
+            # re-opening a NamedTemporaryFile has cross-platform lock hazards.
+            with zipfile.ZipFile(io.BytesIO(w_bytes), "r") as wz:
+                for n in wz.namelist():
+                    if "__pycache__" in n or n.endswith(".pyc"):
+                        raise ValueError(f"Public wheel contains bytecode cache: {n}")
 
     print(f"Successfully verified public release {tag_clean} on {repo} (bundle SHA-256: {actual_sha})")
 
